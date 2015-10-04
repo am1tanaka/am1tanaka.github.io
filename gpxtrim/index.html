@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang='jp'>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GPX Trimmer js</title>
+    <!-- Bootstrap
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    -->
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class='container'>
+      <h1>GPX Trimmer js</h1>
+
+      <form action="post" enctype="multipart/form-data">
+        <div class='form-group'>
+          <label for='fileGpx'>GPXファイル</label>
+          <input type="file" id="fileGpx" name="fileGpx" accept=".gpx"/>
+          <div id="gpxstatus" class="help-block"></div>
+        </div>
+        <hr />
+        <div class="form-group">
+          <label for="textStart">開始時間</label>
+          <input type="text" id="textStart" placeholder="2015/10/1 9:00:00" class='form-control'/>
+          <div class="help-block">ここで設定した時間より前のログを削除します。省略すると最初のデータから利用します。
+          <br/>ログにある時間より前の時間を設定すると、最初のデータをコピーして、指定した時間のログを追加します。</div>
+        </div>
+        <div class="form-group">
+          <label for="textEnd">終了時間</label>
+          <input type="text" id="textEnd" placeholder="2015/10/1 17:00:00" class='form-control'/>
+          <div class="help-block">ここで設定した時間より後ろのログを削除します。省略すると最後までデータを利用します。
+          <br/>ログにある時間より後ろの時間を設定すると、最後のデータをコピーして、指定した時間のログを追加します。</div>
+        </div>
+        <submit class='btn btn-primary'>GPX変換</submit>
+      </form>
+      <a id="btnDownload"></a>
+      <div id='resultst'></div>
+      <hr />
+      <div class="copyright">2015 YuTanaka / <a href='https://github.com/am1tanaka/gpx-trimmer-js/blob/master/LICENSE'>MIT License</a></div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins)
+    <script src="./jquery.min.js"></script>
+    -->
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed
+    <script src="./js/bootstrap.min.js"></script>
+    -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="./js/libgpx.js"></script>
+
+    <!-- Latest compiled and minified JavaScript -->
+
+  </body>
+</html>
