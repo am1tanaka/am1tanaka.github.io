@@ -24,7 +24,7 @@
   <body>
     <div class='container'>
       <h1>GPX Trimmer js</h1>
-      <div class='help-block'>Ver20151005.3</div>
+      <div class='help-block'>Ver20151124.1</div>
 
       <form action="post" enctype="multipart/form-data">
         <div class='form-group'>
@@ -47,7 +47,15 @@
           <div class="help-block">ここで設定した時間より後ろのログを削除します。省略すると最後までデータを利用します。
           <br/>ログにある時間より後ろの時間を設定すると、最後のデータをコピーして、指定した時間のログを追加します。</div>
         </div>
-        <submit class='btn btn-primary'>GPX変換</submit>
+
+        <div class="checkbox">
+          <label>
+            <input type="checkbox" id="checkAddStartEnd" checked='true' /> 開始時間と終了時間を追加する
+          </label>
+          <div class="help-block">このチェックをつけると、データを削除した後、開始時間と終了時間を追加します。</div>
+        </div>
+
+        <submit class='btn btn-primary form-control'>GPX変換</submit>
       </form>
       <a id="btnDownload"></a>
       <div id='resultst'></div>
