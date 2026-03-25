@@ -1,0 +1,243 @@
+<h1 id="問題発生">問題発生</h1>
+<p>Brackeys Game Jam 2024.1に投稿した「次元ドア」の開発中にシーン絡みでいくつかの問題に悩まされました。</p>
+
+<ul>
+  <li>継承したシーンを操作しているうちに、項目の設定先が変わってしまった</li>
+  <li>「編集可能な子」で変更した内容がどこに保存されるか分からず活用できなかった</li>
+  <li>exportした変数にアタッチした子ノードの参照先が壊れる症状が頻発した</li>
+  <li>TileMapの変更が先祖返りしたり、使い回しがうまくいかない</li>
+</ul>
+
+<p>こららについて調べてみました。TileMapは別に改めてまとめます。</p>
+
+<h1 id="調べたいこと">調べたいこと</h1>
+
+<p>簡単なシーンを作成して、以下のことを調べてみました。</p>
+
+<ul>
+  <li>ルートシーンに配置した子のシーンに変更を加えるとどこに保存されるのか？</li>
+  <li>「編集可能な子」を選択して展開した子のノードに変更を加えると、どこに保存されるのか？</li>
+  <li>子のシーンから継承したシーンを作成して、ルートシーンに配置したとき、ルートシーンでの変更、継承元の子シーンでの変更、継承したシーンでの変更がどこに保存されるのか？</li>
+  <li>exportした変数にアタッチした子のノードのインスタンスが、何らかの操作で変わることがあるか？</li>
+</ul>
+
+<h1 id="調査方法">調査方法</h1>
+
+<p>Godot 4.2.1の互換性レンダラーで以下のようなプロジェクトを作成しました。</p>
+
+<ul>
+  <li>chr:CharacterBody2D
+    <ul>
+      <li>CollisionShape2D</li>
+      <li>Sprite2D
+        <ul>
+          <li>Area2D
+            <ul>
+              <li>CollisionShape2D</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>chr_inherited: chrを継承</li>
+  <li>main:Node
+    <ul>
+      <li>chr</li>
+      <li>chr_inherited</li>
+    </ul>
+  </li>
+</ul>
+
+<p>以下、簡単な作成手順です。</p>
+
+<ol>
+  <li>Godotで互換性の新規プロジェクトを作成</li>
+  <li>Nodeを作成して、名前をMainにしてmain.tscnでシーンとして保存</li>
+  <li>mainをメインシーンに設定</li>
+  <li>子ノードを追加からCharacterBody2Dで作成。名前をChrにする</li>
+  <li>Chrに以下の子ノードを追加
+    <ol>
+      <li>CollisionShape2Dを作成して、Shapeから新規RectangleShapeを作成</li>
+      <li>ColorRectを作成</li>
+    </ol>
+  </li>
+  <li>chr.gdというスクリプトを作成して、ChrとCollisionShape2Dにアタッチ</li>
+  <li>chr.gdのスクリプトは以下の通り</li>
+</ol>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">extends</span> <span class="n">Node</span>
+
+<span class="nd">@export</span> <span class="n">var</span> <span class="n">_node_nanika</span><span class="p">:</span> <span class="n">Node</span>
+
+<span class="n">func</span> <span class="nf">_ready</span><span class="p">():</span>
+	<span class="nf">print_debug</span><span class="p">(</span><span class="sh">"</span><span class="s">%s: %s</span><span class="sh">"</span> <span class="o">%</span> <span class="p">[</span><span class="n">_node_nanika</span><span class="p">.</span><span class="nf">get_parent</span><span class="p">().</span><span class="n">name</span><span class="p">,</span> <span class="n">_node_nanika</span><span class="p">.</span><span class="n">modulate</span><span class="p">.</span><span class="n">color</span><span class="p">])</span>
+</code></pre></div></div>
+
+<ol>
+  <li>ChrとCollisionShape2DのインスペクターのNode NanikaにColor Rectを設定</li>
+  <li>CHr, CollisionShapw2D, ColorRectのModulateを変更しておきます</li>
+</ol>
+
+<p>これらの変更はすべてmain.tscnに保存されます。</p>
+
+<p>この状態で、Chrをシーンとして保存してみます。</p>
+
+<ol>
+  <li>シーンパネルでChrを右クリックして、ブランチをシーンとして保存を選択して、chr.tscnシーンとして保存する</li>
+</ol>
+
+<p>これでmainシーンのChrはChrシーンのインスタンスになりました。先に設定していたNode NanikaとModulateがどうなったかを確認してみます。</p>
+
+<p>ChrのNode Nanikaは設定が消えていて、戻すアイコンが表示されている状態です。</p>
+
+<p><img src="imgs/01_main_in_chr_scene.png" alt="設定が消えて、戻すボタン" /></p>
+
+<p>それに対してModulateは先ほどの設定が保存されていて、戻すアイコンがありません。</p>
+
+<p><img src="imgs/02_chr_scene_modulate_in_main.png" alt="Modulateは設定されている" /></p>
+
+<p>この動作の不一致は混乱の元になりそうです。さらにChrを編集可能な子にして中身を確認します。</p>
+
+<p>chr.gdのNode Nankaはやはり消えていて、Modulateは保存されています。</p>
+
+<p>Gitでmainシーンの差分を見ると以下の通りです。</p>
+
+<p><img src="imgs/04_diff_main.png" alt="main.tscn" /></p>
+
+<p>消えた行のうち、12行目と18行目がChrとCollisionShape2Dに設定したNode Nanikaの設定です。ここでColorRectをアタッチした情報があります。この時点で、mainシーンからはNode Nanikaへの設定が消えています。</p>
+
+<p>これがchrシーンに移動しているかを確認します。</p>
+
+<p><img src="imgs/03_diff_chr.png" alt="chr.tscn" /></p>
+
+<p>10行目と16行目に_node_nanikaへの代入がありますが、接続が消えてしまっています。これが設定が消えた原因です。一方で、moduleteの値はmainから消えたものがchrに追加されています。</p>
+
+<h2 id="疑問">疑問</h2>
+
+<p>先の確認で、インスタンスを割り当てたNode Nanikaはシーンに変換した際に引き継がれないことが分かりました。そして新たな疑問が浮かびます。</p>
+
+<ul>
+  <li>移行しないのはスクリプトのパラメーターだからか。それとも色などは引き継がれるのか</li>
+  <li>継承シーンを作った際にも引き継がれないのか。また、継承シーンからもとシーンの参照は引き継がれるのか</li>
+</ul>
+
+<p>このあたりを確認します。まずは最初の方です。ScriptにColor要素を追加して、同様のテストをしてみます。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>extends Node
+
+@export var _node_nanika: Node
+@export var _my_color: Color
+
+func _ready():
+	print_debug("%s: %s" % [_node_nanika.get_parent().name, _node_nanika.modulate.color])
+</code></pre></div></div>
+
+<p>ChrとCollisionShape2DそれぞれのMy Colorを変更して保存したら、Chrをシーンにします。</p>
+
+<p>確認すると色は引き継がれることが分かりました。</p>
+
+<p><img src="imgs/05_color_is_ok.png" alt="色は保存される" /></p>
+
+<p>シリアライズ化できるものは保存されて、インスタンスの参照のような設定は引き継がれないようです。</p>
+
+<h2 id="子シーンのノードパスは引き継げるか">子シーンのノードパスは引き継げるか</h2>
+
+<p>次は、子シーンにノードパスを設定した場合に親に引き継がれるかを確認してみます。</p>
+
+<ul>
+  <li>Chrシーンをルートにします</li>
+  <li>ChrとCollisionShape2DにColorRectを設定します</li>
+</ul>
+
+<p>保存すると、Chrシーンに設定が</p>
+
+<p><img src="imgs/06_chr_scene_set_node_path.png" alt="Chrシーン内でのノードパスは設定できている" /></p>
+
+<p>mainシーンに戻ると今度はノードパスが引き継がれていることが確認できます。</p>
+
+<p><img src="imgs/07_node_path_ok.png" alt="mainシーンのchrのノードが設定されている" /></p>
+
+<p>ここで戻るアイコンが表示されていることが引っかかりました。試しに押してみてもColorRectが設定されたままです。mainシーンを保存してGitで確認しましたが、mainシーンは何も保存されていませんでした。</p>
+
+<p>この挙動はバグのような感じがします。もとのmainシーンにはNode Nankaの設定はありません。子シーンを読み込んだだけなのでここに変化はないはずなのですが、恐らくChrをシーンにする前の何らかの設定がエディター内に残っていて、それが不一致だったので戻るアイコンが表示されたのではないかと推察します。この挙動は分かりにくいので報告した方がいいかも知れませんね。</p>
+
+<h2 id="継承シーンの挙動">継承シーンの挙動</h2>
+
+<p>Chrの継承クラスChrInheritedを作成して、パラメーターの引き継がれ状況を観察します。</p>
+
+<ul>
+  <li>ファイルシステムからchr.tscnを右クリックして、新しい継承シーンを作成します</li>
+  <li>名前をChrInheritedにします（ここで自動的に名前の変更が表示されてほしい）</li>
+  <li>chr_inherited.tscnとして保存</li>
+</ul>
+
+<p>Gitで差分を見ると、継承シーンは非常にシンプルな構造であることが分かります。</p>
+
+<p><img src="imgs/08_inherited_scene.png" alt="継承したシーン" /></p>
+
+<p>細かい設定がないことから問題なく移行できていることが推測できます。確認すると、実際に問題なく参照できています。</p>
+
+<p><img src="09_inherited_params.png" alt="継承できている" /></p>
+
+<p>ただここでも戻るアイコンが表示されることが引っかかります。押してみると、mainシーンのときと同様、ファイルを保存しても何も変更されませんでした。</p>
+
+<p>継承シーンをmainシーンに配置したところ、NodePathの参照は正しく引き継がれていました。ただし、戻すアイコンは表示されます。押しても何も変更はありませんが、気持ちが良いものではありません。</p>
+
+<h2 id="まとめ">まとめ</h2>
+
+<p>以上から、開発中に悩まされたことの原因が掴めたような気がします。</p>
+
+<p>問題の元凶はブランチをシーンとして保存するときにNodePathが引き継がれないことでした。これにより、親のシーンで編集している分には問題がなかった設定が、保存したシーンに引き継がれておらず、</p>
+
+<p>さらに混乱を招いたのが、戻すアイコンが表示されることでした。値が変わっていないのにこのアイコンが表示されてしまうことで、何か操作を間違えたのかとぎょっとすることが多発しました。</p>
+
+<h3 id="追加">追加</h3>
+<p>去年の10月にすでにIssuesに報告されてた。</p>
+
+<p>https://github.com/godotengine/godot/issues/84016</p>
+
+<p>10/30に以下へ移行</p>
+
+<p>https://github.com/godotengine/godot/issues/84146</p>
+
+<p>SceneTreeでノードやPackedSceneをシーンを複製やコピペするさいに、ノードパスをただコピーをするだけで（あてはめ）しない。</p>
+
+<p>https://github.com/godotengine/godot/issues/78060</p>
+
+<h3 id="mainシーンのchrから">mainシーンのChrから</h3>
+
+<h2 id="継承シーンでの状況を確認する">継承シーンでの状況を確認する</h2>
+
+<p>この段階で観察すると、ChrにアタッチしたスクリプトのColorRectとCollisionShape2DのShapeに戻すアイコンが表示されます。保存しても消えません。これはデフォルトの状態ではない、ということになります。これらが保存されているのはmainシーンです。</p>
+
+<p>Chrを選択して、ブランチをシーンとして保存します。mainシーンから</p>
+
+<h1 id="検証">検証</h1>
+
+<h2 id="ルートシーンに配置した子のシーンに変更を加えるとどこに保存されるのか">ルートシーンに配置した子のシーンに変更を加えるとどこに保存されるのか？</h2>
+
+<p>chrの座標を変更して保存してみます。</p>
+
+<p>GitHubで確認すると、main.tscnに保存されていることが分かりました。</p>
+
+<p>chrシーンを開くと座標はもとのままなので、mainシーンで編集した場合はmainシーンに保存されることが確認できました。また、変更した項目には戻すボタンが追加されます。</p>
+
+<ul>
+  <li>「編集可能な子」を選択して展開した子のノードに変更を加えると、どこに保存されるのか？</li>
+  <li>子のシーンから継承したシーンを作成して、ルートシーンに配置したとき、ルートシーンでの変更、継承元の子シーンでの変更、継承したシーンでの変更がどこに保存されるのか？</li>
+</ul>
+
+<p>Godotはシーンの情報をすべてテキストで保存するので、Gitを使えば保存データがどのファイルに記録されたかを簡単に確認することができます。</p>
+
+<h1 id="足元にアタッチした子のオブジェクトのリンクが外れる問題">足元にアタッチした子のオブジェクトのリンクが外れる問題</h1>
+
+<p>かなり繰り返し悩まされた現象です。ステージ作成をしているうちに、仲間や敵が変な場所で反転する症状が出ました。</p>
+
+<p>ここまでの検証から、子に行った変更は親には影響を与えないはずです。しかし、何らかの</p>
+
+<p>やったこととしては、キャラの複製と継承して別のキャラを作ったことが挙げられる。</p>
+
+<h2 id="推測">推測</h2>
+<p>親のシーンでアタッチしたのではないかと推定。</p>
+

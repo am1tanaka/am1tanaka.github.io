@@ -1,0 +1,18 @@
+search_engine_exclude: true
+
+# AnimationTreeのStateMachine
+
+boolによる変更は、Conditionsでできる。
+
+enumや、複雑な条件を設定したい場合は、AnimationTreeを継承したクラスを作成します。
+
+AnimationPlayerだけ作成して、アニメ名で再生するのは楽ですが、アニメ再生時の名前の指定方法に不安が残ります。
+AnimationTreeのStateMachineでenumを使えば、AnimationPlayerのアニメ名と、スクリプト上でのアニメ制御を切り離せますし、アクションと結びつけやすいというメリットがあります。
+
+# アニメスピードの変更
+
+Animation Treeを使うと、Animation Playerのspeed_scaleが無効になります。速度を変えたい場合は、BlendNodeを作成して、そこにアニメーション再生とTimeScaleNodeを接続します。
+
+TimeScaleへの値は、Animation TreeのインスペクターのParametersから、プロパティのパスを確認できるので、set()関数で設定します。
+
+
